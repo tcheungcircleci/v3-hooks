@@ -1,0 +1,23 @@
+{
+  "name": "@synthetixio/v3-hooks",
+  "version": "0.0.0",
+  "main": "index.js",
+  "repository": "synthetixio/v3-hooks",
+  "author": "Synthetix",
+  "license": "MIT",
+  "private": true,
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "pretty": "prettier . '**/*' --write",
+    "pretty:check": "prettier . '**/*' --check"
+  },
+  "dependencies": {
+    "@synthetixio/v3-contracts": "^4.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  },
+  "packageManager": "yarn@4.1.0"
+}
