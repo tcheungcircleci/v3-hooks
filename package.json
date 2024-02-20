@@ -11,8 +11,10 @@
     "lib"
   ],
   "scripts": {
-    "start": "webpack-cli serve",
-    "build": "webpack-cli",
+    "start:ethers": "webpack-cli serve --config webpack.ethers.config.js",
+    "build:ethers": "webpack-cli --config webpack.ethers.config.js",
+    "start:viem": "webpack-cli serve --config webpack.viem.config.js",
+    "build:viem": "webpack-cli --config webpack.viem.config.js",
     "codegen": "node codegen",
     "pretty": "prettier . '**/*' --write",
     "pretty:check": "prettier . '**/*' --check",
@@ -35,6 +37,7 @@
     "html-webpack-plugin": "^5.6.0",
     "prettier": "^3.2.5",
     "react-dom": "^18.2.0",
+    "viem": "^2.7.9",
     "webpack": "^5.90.1",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"
