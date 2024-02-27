@@ -16,6 +16,7 @@ module.exports = defineConfig({
       webpackConfig: require('./webpack.ethers.config'),
     },
     setupNodeEvents(on, config) {
+      require('@cypress/code-coverage/task')(on, config);
       return config;
     },
   },
@@ -28,6 +29,7 @@ module.exports = defineConfig({
       if (process.env.CI) {
         on('before:browser:launch', require('./cypress/lib/printBrowserLogs').printBrowserLogs);
       }
+      require('@cypress/code-coverage/task')(on, config);
       on('task', {
         ...require('./cypress/tasks/setEthBalance'),
         ...require('./cypress/tasks/createAccount'),
@@ -40,8 +42,8 @@ module.exports = defineConfig({
       runMode: 1,
       openMode: 0,
     },
-    defaultCommandTimeout: 90_000,
-    execTimeout: 120_000,
-    taskTimeout: 300_000, // sometimes Anvil needs quite a bit of time to complete impersonating tx
+    defaultCommandTimeout: 5_000,
+    execTimeout: 5_000,
+    taskTimeout: 30_000, // sometimes Anvil needs quite a bit of time to complete impersonating tx
   },
 });

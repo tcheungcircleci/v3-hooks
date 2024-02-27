@@ -8,6 +8,7 @@ const ABI_WHITELIST = {
   CoreProxy: {
     getAccountOwner: true,
     createAccount: true,
+    AccountCreated: true,
   },
   AccountProxy: {
     balanceOf: true,
@@ -53,6 +54,7 @@ async function codegen() {
     //
     'const deployments = {};',
   ];
+  const AllErrors = new Set();
   for (const { chainId, preset } of supportedDeployments) {
     await fs.mkdir(`./lib/deployments/${chainId}-${preset}`, { recursive: true });
     const meta = JSON.parse(
@@ -75,9 +77,7 @@ async function codegen() {
           'utf8'
         )
       );
-      const abi = fullAbi.filter(
-        ({ type, name }) => type === 'function' && ABI_WHITELIST?.[contractName]?.[name] === true
-      );
+      const abi = fullAbi.filter(({ name }) => ABI_WHITELIST?.[contractName]?.[name] === true);
 
       await fs.writeFile(
         `./lib/deployments/${chainId}-${preset}/${contractName}.js`,
@@ -92,7 +92,24 @@ async function codegen() {
         `deployments["${chainId}"]["${preset}"]["${contractName}"] = require('./${chainId}-${preset}/${contractName}')`
       );
     }
+
+    // Generate AllErrors
+    const abi = JSON.parse(
+      await fs.readFile(
+        require.resolve(`@synthetixio/v3-contracts/${chainId}-${preset}/AllErrors.readable.json`),
+        'utf8'
+      )
+    );
+    abi.forEach((e) => AllErrors.add(e));
   }
+
+  const { Interface } = require('@ethersproject/abi');
+  await fs.writeFile(
+    `./lib/deployments/AllErrors.js`,
+    await prettyJs(`exports.abi = ${new Interface(Array.from(AllErrors)).format('json')};`),
+    'utf8'
+  );
+  index.push(`deployments["AllErrors"] = require('./AllErrors')`);
 
   index.push(`exports.deployments = deployments;`);
 

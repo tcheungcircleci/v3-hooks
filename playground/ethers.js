@@ -1,44 +1,79 @@
 import { ethers } from 'ethers';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom/client';
-import { SynthetixProvider } from '../lib/useSynthetix';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { createReader, createWriter } from '../lib/adapters/ethers';
+import { SynthetixProvider, useSynthetix } from '../lib/useSynthetix';
 import { App } from './App';
 import './devtools';
 
-import { createReader } from '../lib/adapters/ethers';
+export function WalletWatcher({ children }) {
+  const [, updateSynthetix] = useSynthetix();
 
-const container = document.createElement('div');
-container.id = 'app';
-document.body.appendChild(container);
+  React.useEffect(() => {
+    if (!window.ethereum) {
+      return;
+    }
+
+    function onAccountsChanged(accounts) {
+      updateSynthetix({ walletAddress: accounts[0] ? accounts[0].toLowerCase() : undefined });
+    }
+
+    async function onChainChanged(chainId) {
+      updateSynthetix({ chainId: Number(chainId) });
+    }
+
+    window.ethereum.on('accountsChanged', onAccountsChanged);
+    window.ethereum.on('chainChanged', onChainChanged);
+
+    return () => {
+      window.ethereum.removeListener('accountsChanged', onAccountsChanged);
+      window.ethereum.removeListener('chainChanged', onChainChanged);
+    };
+  }, []);
+
+  return children;
+}
 
 async function run() {
-  const root = ReactDOM.createRoot(container);
-
-  const chainId = window.ethereum ? Number(window.ethereum.chainId) : undefined;
   const preset = 'andromeda';
 
   const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : undefined;
+  const { chainId } = provider ? await provider.getNetwork() : 0;
+
   const signer = provider ? provider.getSigner() : undefined;
 
-  let walletAddress = window.ethereum ? window.ethereum.selectedAddress : undefined;
+  const accounts = provider ? await provider.listAccounts() : [];
+  const walletAddress = accounts[0] ? accounts[0].toLowerCase() : undefined;
+  const reader = createReader({ provider });
+  const writer = createWriter({ signer });
 
-  // Autoconnect here until we have button in the UI
-  if (provider && !walletAddress) {
-    [walletAddress] = await provider.send('eth_requestAccounts');
-  }
+  window.__connect = async () => {
+    return provider ? await provider.send('eth_requestAccounts') : undefined;
+  };
 
+  const root = ReactDOM.createRoot(document.querySelector('#app'));
   root.render(
-    React.createElement(
-      SynthetixProvider,
-      {
+    <SynthetixProvider
+      {...{
         chainId,
         preset,
-        reader: createReader({ provider }),
-        walletAddress: walletAddress ? walletAddress.toLowerCase() : undefined,
-      },
-      React.createElement(App)
-    )
+        reader,
+        writer,
+        walletAddress,
+      }}
+    >
+      <WalletWatcher>
+        <App />
+      </WalletWatcher>
+    </SynthetixProvider>
   );
 }
 
 run();
+
+if (module.hot) {
+  module.hot.accept();
+  module.hot.dispose(() => {
+    // do nothing
+  });
+}
