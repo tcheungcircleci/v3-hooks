@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useIsChainSupported } from '../lib/useIsChainSupported';
 import { useSynthetix } from '../lib/useSynthetix';
 import { Address } from './Address';
@@ -11,7 +10,7 @@ function Connected() {
     <>
       {!isChainSupported ? (
         <>
-          <b style={{ color: 'red' }}>
+          <b className="error">
             Chain "{synthetix.chainId}" is not supported, switch in your wallet
           </b>
           <br />
@@ -31,7 +30,9 @@ export function Wallet() {
       {synthetix.walletAddress ? (
         <Connected />
       ) : (
-        <button onClick={window.__connect}>Connect</button>
+        <button type="button" onClick={window.__connect}>
+          Connect
+        </button>
       )}
     </>
   );

@@ -2,28 +2,21 @@
 
 const path = require('node:path');
 const fs = require('node:fs/promises');
-const prettier = require('prettier');
 
 const ABI_WHITELIST = {
   CoreProxy: {
     getAccountOwner: true,
     createAccount: true,
     AccountCreated: true,
+    getApprovedPools: true,
+    getPreferredPool: true,
+    getPoolName: true,
   },
   AccountProxy: {
     balanceOf: true,
     tokenOfOwnerByIndex: true,
   },
 };
-
-async function prettyJs(content) {
-  const prettierOptions = JSON.parse(await fs.readFile('./.prettierrc', 'utf8'));
-
-  return await prettier.format(content, {
-    parser: 'acorn',
-    ...prettierOptions,
-  });
-}
 
 async function codegen() {
   const deploymentsDir = path.dirname(require.resolve('@synthetixio/v3-contracts'));
@@ -40,15 +33,8 @@ async function codegen() {
     .filter(Boolean);
   console.log({ supportedDeployments });
 
-  await fs.rm(`lib/deployments`, { force: true, recursive: true });
-  await fs.mkdir(`lib/deployments`, { recursive: true });
-  //  await fs.writeFile(
-  //    './lib/deployments.js',
-  //    await prettyJs(`
-  //      exports.deployments = ${JSON.stringify(supportedDeployments)}
-  //    `),
-  //    'utf8'
-  //  );
+  await fs.rm('lib/deployments', { force: true, recursive: true });
+  await fs.mkdir('lib/deployments', { recursive: true });
 
   const index = [
     //
@@ -64,7 +50,7 @@ async function codegen() {
       )
     );
 
-    index.push(``);
+    index.push('');
     index.push(`deployments["${chainId}"] = {};`);
     index.push(`deployments["${chainId}"]["${preset}"] = {};`);
 
@@ -81,10 +67,10 @@ async function codegen() {
 
       await fs.writeFile(
         `./lib/deployments/${chainId}-${preset}/${contractName}.js`,
-        await prettyJs(`
+        `
           exports.address = ${JSON.stringify(address)};
           exports.abi = ${JSON.stringify(abi)};
-        `),
+        `,
         'utf8'
       );
 
@@ -100,20 +86,25 @@ async function codegen() {
         'utf8'
       )
     );
-    abi.forEach((e) => AllErrors.add(e));
+
+    for (const e of abi) {
+      AllErrors.add(e);
+    }
   }
 
   const { Interface } = require('@ethersproject/abi');
   await fs.writeFile(
-    `./lib/deployments/AllErrors.js`,
-    await prettyJs(`exports.abi = ${new Interface(Array.from(AllErrors)).format('json')};`),
+    './lib/deployments/AllErrors.js',
+    `
+      exports.abi = ${new Interface(Array.from(AllErrors)).format('json')};
+    `,
     'utf8'
   );
   index.push(`deployments["AllErrors"] = require('./AllErrors')`);
 
-  index.push(`exports.deployments = deployments;`);
+  index.push('exports.deployments = deployments;');
 
-  await fs.writeFile(`./lib/deployments/index.js`, await prettyJs(index.join('\n')), 'utf8');
+  await fs.writeFile('./lib/deployments/index.js', index.join('\n'), 'utf8');
 }
 
 codegen();
