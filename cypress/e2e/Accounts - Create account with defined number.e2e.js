@@ -13,7 +13,7 @@ it('creates new account with pre-defined id', () => {
     .should('contain', `Create account "${accountId}"`)
     .click();
 
-  cy.get('[data-testid="accounts list"] [data-testid="account"]').should('have.length', 1);
+  cy.get('[data-testid="accounts list"] [data-testid="account"]').should('have.length', 10);
   cy.get(
     `[data-testid="accounts list"] [data-testid="account"][data-account-id="${accountId}"]`
   ).should('exist');
