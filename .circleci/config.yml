@@ -90,8 +90,12 @@ jobs:
           name: Wait for anvil localhost:8545
           command: wget -q -O - --retry-connrefused --waitretry=20 --read-timeout=20 --timeout=15 -t 10 --post-data='{"method":"eth_chainId","params":[],"id":1,"jsonrpc":"2.0"}' --header='Content-Type:application/json' http://localhost:8545
 
-      - run: cypress run --e2e --browser chrome
-
+      - run:
+          name: Install coverage reporter
+          command: yarn add --dev cypress-circleci-reporter
+      - run: |
+          TEST_FILES=$(find ./cypress -regextype posix-extended -regex ".*[-.](cy|spec).(js|ts)")
+          echo "$TEST_FILES" | circleci tests run --command="xargs cypress run --e2e --browser chrome --reporter cypress-circleci-reporter --spec" --verbose
       - store_artifacts:
           path: '.nyc_output'
           destination: 'coverage'
